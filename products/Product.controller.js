@@ -1,37 +1,16 @@
 sap.ui.controller("products.Product", {
-
     /**
 * Called when a controller is instantiated and its View controls (if available) are already created.
 * Can be used to modify the View before it is displayed, to bind event handlers and do other one-time initialization.
 * @memberOf products.Product
 */ mode:0,
-    onInit : function() {
-        /* try{
-            var oModel = new sap.ui.model.odata.v2.ODataModel(						
-                //"proxy/http/services.odata.org/V3/(S(x0u2y1puhyzoqqgaohheug2h))/OData/OData.svc/");										
-            oModel.oHeaders = {
-                "DataServiceVersion" : "3.0",
-                "MaxDataServiceVersion" : "3.0"
-            }						
-            sap.ui.getCore().setModel(oModel,"products");
-        }
-        catch(ex) {
-            alert(ex);
-        }
-        finally {
-            // Do nothing here!
-            console.log(oModel.getData());
-            console.log("paso");
-        }*/
-
-        //var oModel = new sap.ui.model.json.JSONModel();
-        //oModel.loadData('http://localhost:1337/products/');
-        //console.log(oModel.oData);
-        //sap.ui.getCore().setModel(oModel,"products");
-
+    urlService:"http://138.197.87.140:1337/products/",
+    tableProduct:null,
+    oThis:null,
+    onInit : function() {       
+      oThis = this;
     },
-
-
+    
     /**
 * Similar to onAfterRendering, but this hook is invoked before the controller's View is re-rendered
 * (NOT before the first rendering! onInit() is used for that one!).
@@ -58,7 +37,24 @@ sap.ui.controller("products.Product", {
     //
     //	}
     resetForm:function(){
-
+        $("#name").val("");
+        $("#description").val("");
+        $("#date").val("");		
+        $("#rating").val("");
+        $("#price").val("");
+    },
+    refresh:function(){
+        var oModel = new sap.ui.model.json.JSONModel();  
+        $.ajax({
+            url:this.urlService,
+            type:"get",            
+            success:function(data){
+                var d = {products:data};                
+                oModel.setData({modelData:d});
+                sap.ui.getCore().setModel(oModel);                
+               // this.tableProduct.bindRows("/modelData/products"); // with our service	
+            }
+        });	
     },
     create:function(){
         this.mode = "create";
@@ -66,30 +62,41 @@ sap.ui.controller("products.Product", {
 
         $("#formId").slideDown(300,function(){
             var id = sap.ui.getCore().byId("tableId")._getRowCount();
-            $("#id").val(id);
+            $("#id").val(id+1);
         });
     },
     edit:function(){		
-        $("#formId").show();
+        $("#formId").slideDown(300,function(){
+            $("#id").removeAttr("readonly");
+        $("#id").attr("placeholder","Seleccione ID");  
+        });
+        //var inputId = sap.ui.getCore().byId("id").editable = true;            
+       },
+    remove:function(){       
+       // $("#formId").show();
+        $("#formId").slideDown(300,function(){
+            $("#id").removeAttr("readonly");
+        $("#id").attr("placeholder","Seleccione ID");  
+        });
     },
-    remove:function(){
-        $("#formId").show();
+      read:function(id){       
+      if(id!=""){
+        $.get(this.urlService+id,function(data){
+        $("#name").val(data.Name);
+        $("#description").val(data.Description);
+        $("#date").val(data.ReleaseDate);		
+        $("#rating").val(data.Rating);
+        $("#price").val(data.Price);
+        console.log(data);
+       });
+      }
+         
+          
     },
-    save:function(){
-        /*var requestObj = {
-				requestUri:"",
-				method:"",
-				headers:{
-					"X-Requested-Width":"XMLHttpRequest",
-					"Content-Type":"application/json;odata=mininalmetadata",
-					"DataServiceVersion":"3.0",
-					"MaxDataServiceVersion":"3.0",
-					"Accept":"application/json;odata=mininalmetadata"
-				}
-		};
-		var newData = {
-			"odata.type":"ODataDemo.Product",
-			"ID": $("#id").val(),
+    save:function(){   
+        var uri = "";
+		var newData = {			
+			//"ID": $("#id").val(),
 			"Name": $("#name").val(),
 			"Description": $("#description").val(),
 			"ReleaseDate": $("#date").val(),			
@@ -97,68 +104,42 @@ sap.ui.controller("products.Product", {
 			"Price": $("#price").val()
 		};
 		if(this.mode == "create"){
-			var uri = "proxy/http/services.odata.org/V3/(S(ap1llhf1xx2nrvytpamq0t4f))/OData/OData.svc";
-			var method = "POST";
-			requestObj.requestUri = uri;
-			requestObj.method = method;
-			requestObj.data = newData;
-		}	
-		console.log(requestObj);
-
-		OData.request(requestObj,function(){
-			sap.ui.getCore().getModel("products").refresh();
+			uri = this.urlService+"create/";		
+        }	
+        if(this.mode == "edit"){
+            uri = this.urlService+"update/";		
+        }
+        if(this.mode == "remove"){
+            uri = this.urlService+"destroy/";		
+        }
+		$.get(uri,newData).done(function(data){
+			//here it should has a method refresh  
+            successProcess = true;
+            oThis.refresh();
+            console.log(data);
 			$("#formId").slideUp();
-		});*/
+		});        
     },
-    loadData:function(){
-        // $.ajax('http://localhost:1337/products/', {
-         $.ajax('http://138.197.87.140:1337/products/', {
-        method: 'GET'
-    }).then(function(data) {
-        console.log(data);
-    });
+    getTable(table){
+        this.TableProduct = table;
     },
     loadDataTable:function(oTable){
-        var oModel = new sap.ui.model.json.JSONModel();
-        //El valor de esta variable debe ser ocultada
-        //var url_ = "http://services.odata.org/V3/(S(ap1llhf1xx2nrvytpamq0t4f))/OData/OData.svc/Products?$format=json";
-        var url_ = "http://138.197.87.140:1337/products/";
+        var oModel = new sap.ui.model.json.JSONModel();       
+        var url_ = this.urlService;
         $.ajax({
             url:url_,
-            type:"get",
-            data:"",
-            //crossDomain: true,
-            dataType: 'jsonp',
-            //data:{request:true},
+            type:"get",            
             success:function(data){
-                console.log(data);
-                oModel.setData({modelData:data});
-                sap.ui.getCore().setModel(oModel);
-                //sap.ui.getCore().setModel(oModel.getJSON());					
-                // oTable.setModel(oModel);// with oData service
-                oTable.bindRows("/modelData/"); // with our service	
+                var d = {products:data};                
+                oModel.setData({modelData:d});
+                sap.ui.getCore().setModel(oModel);                
+                oTable.bindRows("/modelData/products"); // with our service	
             },
-            error:function(r){
-            console.log("entro a error");
-            console.log(r);
-        }
-               });	
-    },
-    loadData2:function(table){
-        var oModel = new sap.ui.model.json.JSONModel();
-        var url_ = "http://services.odata.org/V3/(S(ap1llhf1xx2nrvytpamq0t4f))/OData/OData.svc/Products?$format=json";
-        $.ajax({
-            url:url_,
-            type:"get",
-            data:{request:true},
-            success:function(data){			
-                var h = $("#tableId").children().first()[0];
-                var r = $(h).children()[1];
-
+            error:function(r,e){
+                console.log("entro a error");
                 console.log(r);
-                console.log(data.value);
             }
         });	
     }
-
+                  
 });
