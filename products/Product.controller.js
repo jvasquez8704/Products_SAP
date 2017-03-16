@@ -122,7 +122,8 @@ sap.ui.controller("products.Product", {
             oThis.resetForm();
 			$("#formId").slideUp();
 		}).error(function(r,e){
-            console.log("error on service");
+            oThis.errorService("No se guardaron tus cambios \n Error al conectarse al servicio");
+            console.log("No se guardaron tus cambios \n Error al conectarse al servicio");
             console.log(r,e);
         });
     },
@@ -144,7 +145,11 @@ sap.ui.controller("products.Product", {
             error:function(r,e){
                 console.log("error on service");
                 console.log(r,e);
+                oThis.errorService("Error al conectarse al servicio");
             }
         });	
+    },
+    errorService:function(message){
+        sap.ui.commons.MessageBox.alert(message);
     }
 });
