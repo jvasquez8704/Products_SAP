@@ -1,3 +1,4 @@
+
 sap.ui.controller("products.Product", {
     /**
 * Called when a controller is instantiated and its View controls (if available) are already created.
@@ -65,7 +66,8 @@ sap.ui.controller("products.Product", {
             $("#id").val(id+1);
         });
     },
-    edit:function(){		
+    edit:function(){
+        this.mode = "edit";
         $("#formId").slideDown(300,function(){
             $("#id").removeAttr("readonly");
         $("#id").attr("placeholder","Seleccione ID");  
@@ -74,6 +76,7 @@ sap.ui.controller("products.Product", {
        },
     remove:function(){       
        // $("#formId").show();
+        this.mode = "remove";
         $("#formId").slideDown(300,function(){
             $("#id").removeAttr("readonly");
         $("#id").attr("placeholder","Seleccione ID");  
@@ -95,6 +98,7 @@ sap.ui.controller("products.Product", {
     },
     save:function(){   
         var uri = "";
+        var id = $('#id').val();
 		var newData = {			
 			//"ID": $("#id").val(),
 			"Name": $("#name").val(),
@@ -107,18 +111,20 @@ sap.ui.controller("products.Product", {
 			uri = this.urlService+"create/";		
         }	
         if(this.mode == "edit"){
-            uri = this.urlService+"update/";		
+            uri = this.urlService+"update/"+id+"/";
         }
         if(this.mode == "remove"){
-            uri = this.urlService+"destroy/";		
+            uri = this.urlService+"destroy/"+id;
         }
 		$.get(uri,newData).done(function(data){
-			//here it should has a method refresh  
-            successProcess = true;
+			//here it should has a method refresh
             oThis.refresh();
-            console.log(data);
+            oThis.resetForm();
 			$("#formId").slideUp();
-		});        
+		}).error(function(r,e){
+            console.log("error on service");
+            console.log(r,e);
+        });
     },
     getTable(table){
         this.TableProduct = table;
@@ -136,10 +142,9 @@ sap.ui.controller("products.Product", {
                 oTable.bindRows("/modelData/products"); // with our service	
             },
             error:function(r,e){
-                console.log("entro a error");
-                console.log(r);
+                console.log("error on service");
+                console.log(r,e);
             }
         });	
     }
-                  
 });
